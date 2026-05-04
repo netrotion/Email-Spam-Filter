@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}SpamScope Dashboard{% endblock %}
+{% block page_kicker %}Detection console{% endblock %}
+{% block page_title %}Sidebar dashboard for quick email testing{% endblock %}
+{% block page_description %}Score one email, upload batch files, and inspect model readiness from one compact workspace.{% endblock %}
+
+{% block sidebar_sections %}
+<section class="sidebar-card">
+    <span class="section-label">Shortcuts</span>
+    {% if dataset_available %}<a class="mini-link" href="#test-dataset-samples">Test dataset (processed)</a>{% endif %}
+    {% if raw_dataset_available %}<a class="mini-link" href="#raw-dataset-samples">Raw dataset (unprocessed)</a>{% endif %}
+    <a class="mini-link" href="#single-predict">Single prediction</a>
+    <a class="mini-link" href="#batch-predict">Batch scoring</a>
+    <a class="mini-link" href="#api-reference">API endpoints</a>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="metric-strip">
+    <article class="metric-card">
+        <span>Status</span>
+        <strong>{{ model_info.status }}</strong>
+    </article>
+    <article class="metric-card">
+        <span>Accuracy</span>
+        <strong>{% if model_info.metrics.get("accuracy") is not none %}{{ "%.2f"|format(model_info.metrics.get("accuracy", 0) * 100) }}%{% else %}N/A{% endif %}</strong>
+    </article>
+    <article class="metric-card">
+        <span>Precision</span>
+        <strong>{% if model_info.metrics.get("precision") is not none %}{{ "%.2f"|format(model_info.metrics.get("precision", 0) * 100) }}%{% else %}N/A{% endif %}</strong>
+    </article>
+    <article class="metric-card">
+        <span>F1</span>
+        <strong>{% if model_info.metrics.get("f1") is not none %}{{ "%.2f"|format(model_info.metrics.get("f1", 0) * 100) }}%{% else %}N/A{% endif %}</strong>
+    </article>
+</section>
+
+{% if dataset_available %}
+<section class="panel panel-wide" id="test-dataset-samples" style="margin-bottom: 2rem;">
+    <div class="panel-head">
+        <div>
+            <span class="section-label">Test Dataset Samples (Processed)</span>
+            <h2>Test nhanh voi du lieu mau da xu ly</h2>
+        </div>
+    </div>
+    <div style="margin-bottom: 1rem;">
+        <p style="color: #666; margin-bottom: 1rem;">Chon mot mau email tu test dataset de test nhanh model. Dataset co {{ dataset_samples|length if dataset_samples else 0 }} mau hien thi.</p>
+        <form action="{{ url_for('web.predict_sample_page') }}" method="post" style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <button class="button button-primary" type="submit" name="label_filter" value="">Random mau bat ky</button>
+            <button class="button button-secondary" type="submit" name="label_filter" value="1">Random Spam</button>
+            <button class="button button-secondary" type="submit" name="label_filter" value="0">Random Ham</button>
+        </form>
+    </div>
+    {% if dataset_samples %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email ID</th>
+                    <th>Label</th>
+                    <th>Preview</th>
+                    <th>Length</th>
+                    <th>Source</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sample in dataset_samples %}
+                <tr>
+                    <td><code style="font-size: 0.85em;">{{ sample.email_id[:20] }}...</code></td>
+                    <td><span class="label-chip label-{{ sample.label_name }}">{{ sample.label_name }}</span></td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sample.text_preview }}</td>
+                    <td>{{ sample.text_length }}</td>
+                    <td style="font-size: 0.85em;">{{ sample.source[:20] }}</td>
+                    <td>
+                        <form action="{{ url_for('web.predict_sample_page') }}" method="post" style="display: inline;">
+                            <input type="hidden" name="email_id" value="{{ sample.email_id }}">
+                            <button class="button button-secondary" type="submit" style="padding: 0.25rem 0.75rem; font-size: 0.85em;">Test</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">Khong co mau nao de hien thi.</div>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if raw_dataset_available %}
+<section class="panel panel-wide" id="raw-dataset-samples" style="margin-bottom: 2rem;">
+    <div class="panel-head">
+        <div>
+            <span class="section-label">Raw Dataset Samples (Unprocessed)</span>
+            <h2>Test voi du lieu tho chua qua xu ly</h2>
+        </div>
+    </div>
+    <div style="margin-bottom: 1rem;">
+        <p style="color: #666; margin-bottom: 1rem;">Test model voi du lieu raw tu Kaggle va Enron datasets. Dataset co {{ raw_dataset_samples|length if raw_dataset_samples else 0 }} mau hien thi.</p>
+        <form action="{{ url_for('web.predict_raw_sample_page') }}" method="post" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <button class="button button-primary" type="submit" name="label_filter" value="">Random mau bat ky</button>
+            <button class="button button-secondary" type="submit" name="label_filter" value="1">Random Spam</button>
+            <button class="button button-secondary" type="submit" name="label_filter" value="0">Random Ham</button>
+            <button class="button button-secondary" type="submit" name="source_filter" value="kaggle_raw">Random Kaggle</button>
+            <button class="button button-secondary" type="submit" name="source_filter" value="enron_raw">Random Enron</button>
+        </form>
+    </div>
+    {% if raw_dataset_samples %}
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Email ID</th>
+                    <th>Label</th>
+                    <th>Preview</th>
+                    <th>Length</th>
+                    <th>Source</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sample in raw_dataset_samples %}
+                <tr>
+                    <td><code style="font-size: 0.85em;">{{ sample.email_id }}</code></td>
+                    <td><span class="label-chip label-{{ sample.label_name }}">{{ sample.label_name }}</span></td>
+                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ sample.text_preview }}</td>
+                    <td>{{ sample.text_length }}</td>
+                    <td style="font-size: 0.85em;">{{ sample.source }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">Khong co mau nao de hien thi.</div>
+    {% endif %}
+</section>
+{% endif %}
+
+<section class="dashboard-grid">
+    <article class="panel panel-form" id="single-predict">
+        <div class="panel-head">
+            <div>
+                <span class="section-label">Single prediction</span>
+                <h2>Inspect one email</h2>
+            </div>
+            <span class="endpoint-badge">POST {{ url_for('web.api_predict') }}</span>
+        </div>
+        <form id="single-predict-form" action="{{ url_for('web.predict_page') }}" method="post" class="form-stack">
+            <label for="email-text">Email content</label>
+            <textarea id="email-text" name="text" rows="14" placeholder="Paste subject and body here...">{{ submitted_text }}</textarea>
+            <div class="form-actions">
+                <button class="button button-primary" type="submit" data-loading-text="Predicting...">Run prediction</button>
+                <span class="hint">Single prediction and JSON API share the same inference layer and output schema.</span>
+            </div>
+        </form>
+        {% if single_error %}<div class="notice notice-danger">{{ single_error }}</div>{% endif %}
+    </article>
+
+    <article class="panel panel-result">
+        <div class="panel-head">
+            <div>
+                <span class="section-label">Prediction snapshot</span>
+                <h2>Latest result</h2>
+            </div>
+        </div>
+        {% if single_result %}
+        {% if sample_info %}
+        <div class="notice notice-info" style="margin-bottom: 1rem;">
+            <strong>{% if sample_info.get('is_raw') %}Raw Dataset Sample (Unprocessed){% else %}Test Dataset Sample (Processed){% endif %}</strong><br>
+            <small>ID: {{ sample_info.email_id }} | Source: {{ sample_info.source }} | Actual Label: <span class="label-chip label-{{ sample_info.actual_label }}">{{ sample_info.actual_label }}</span> | Length: {{ sample_info.text_length }} chars</small>
+        </div>
+        {% endif %}
+        <div class="result-callout result-{{ single_result.label }}">
+            <span>Predicted label</span>
+            <strong>{{ single_result.label }}</strong>
+            <small>{{ "%.2f"|format(single_result.confidence * 100) }}% confidence</small>
+        </div>
+        {% if sample_info %}
+        <div style="padding: 0.75rem; margin: 1rem 0; border-radius: 4px; {% if sample_info.actual_label == single_result.label %}background: #d4edda; border: 1px solid #c3e6cb;{% else %}background: #f8d7da; border: 1px solid #f5c6cb;{% endif %}">
+            <strong>{% if sample_info.actual_label == single_result.label %}✓ Correct Prediction{% else %}✗ Incorrect Prediction{% endif %}</strong><br>
+            <small>Actual: {{ sample_info.actual_label }} | Predicted: {{ single_result.label }}</small>
+        </div>
+        {% endif %}
+        <dl class="detail-list two-col">
+            <div><dt>Spam probability</dt><dd>{{ "%.4f"|format(single_result.spam_probability) }}</dd></div>
+            <div><dt>Ham probability</dt><dd>{{ "%.4f"|format(single_result.ham_probability) }}</dd></div>
+            <div><dt>Decision score</dt><dd>{{ "%.4f"|format(single_result.decision_score) }}</dd></div>
+            <div><dt>Model</dt><dd>{{ single_result.model_name or model_info.model_name }}</dd></div>
+        </dl>
+        <h3>Top signals</h3>
+        {% if single_result.top_signals %}
+        <ul class="signal-list">
+            {% for signal in single_result.top_signals %}
+            <li><span>{{ signal.feature }}</span><strong>{{ "%.4f"|format(signal.contribution) }}</strong></li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <div class="empty-state">Transformer models do not expose sparse feature signals.</div>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">No prediction yet. Paste an email and run scoring.</div>
+        {% endif %}
+    </article>
+</section>
+
+<section class="panel panel-wide" id="batch-predict">
+    <div class="panel-head">
+        <div>
+            <span class="section-label">Batch scoring</span>
+            <h2>Upload CSV or TXT and score in bulk</h2>
+        </div>
+        <span class="endpoint-badge">POST {{ url_for('web.api_batch_predict') }}</span>
+    </div>
+    <form id="batch-predict-form" action="{{ url_for('web.batch_page') }}" method="post" enctype="multipart/form-data" class="batch-form">
+        <input id="batch-file" name="file" type="file" accept=".csv,.txt,text/csv,text/plain">
+        <button class="button button-primary" type="submit" data-loading-text="Scoring batch...">Upload and score</button>
+        <button class="button button-secondary {% if not batch_result %}hidden{% endif %}" id="download-batch-results" type="button">Download results CSV</button>
+    </form>
+    {% if batch_error %}<div class="notice notice-danger">{{ batch_error }}</div>{% endif %}
+    {% if batch_result %}
+    <div class="batch-summary">
+        <div><span>Total</span><strong>{{ batch_result.summary.total }}</strong></div>
+        <div><span>Spam</span><strong>{{ batch_result.summary.spam }}</strong></div>
+        <div><span>Ham</span><strong>{{ batch_result.summary.ham }}</strong></div>
+        <div><span>Source</span><strong>{{ batch_result.summary.source }}</strong></div>
+    </div>
+    {% if batch_result.warnings %}
+    <div class="notice notice-warn">{% for warning in batch_result.warnings %}<span>{{ warning }}</span>{% endfor %}</div>
+    {% endif %}
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>#</th><th>Preview</th><th>Label</th><th>Confidence</th><th>Spam</th><th>Ham</th></tr></thead>
+            <tbody id="batch-results-body">
+                {% for row in batch_result.rows %}
+                <tr
+                    data-export-row="{{ row.row_number }}"
+                    data-export-text="{{ row.text }}"
+                    data-export-preview="{{ row.text_preview }}"
+                    data-export-label="{{ row.label }}"
+                    data-export-confidence="{{ row.confidence }}"
+                    data-export-spam-probability="{{ row.spam_probability }}"
+                    data-export-ham-probability="{{ row.ham_probability }}"
+                    data-export-top-signals="{{ row.top_signals|tojson }}"
+                >
+                    <td>{{ row.row_number }}</td>
+                    <td>{{ row.text_preview }}</td>
+                    <td><span class="label-chip label-{{ row.label }}">{{ row.label }}</span></td>
+                    <td>{{ "%.2f"|format(row.confidence * 100) }}%</td>
+                    <td>{{ "%.4f"|format(row.spam_probability) }}</td>
+                    <td>{{ "%.4f"|format(row.ham_probability) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">No batch results yet. Upload a CSV or TXT file to populate the results table.</div>
+    <table class="sr-table"><tbody id="batch-results-body"></tbody></table>
+    {% endif %}
+</section>
+
+<section class="dashboard-grid">
+    <article class="panel">
+        <div class="panel-head"><div><span class="section-label">Saved test metrics</span><h2>Current artifact quality</h2></div></div>
+        <dl class="detail-list">
+            <div><dt>Artifact</dt><dd>{{ model_info.artifact_path }}</dd></div>
+            <div><dt>Metadata</dt><dd>{{ model_info.metadata_path }}</dd></div>
+            <div><dt>Probabilities</dt><dd>{{ "Supported" if model_info.supports_probabilities else "Unavailable" }}</dd></div>
+        </dl>
+    </article>
+    <article class="panel" id="api-reference">
+        <div class="panel-head"><div><span class="section-label">API reference</span><h2>Integration endpoints</h2></div></div>
+        <ul class="api-list">
+            {% for method, endpoint, description in api_reference %}
+            <li><span>{{ method }}</span><code>{{ endpoint }}</code><small>{{ description }}</small></li>
+            {% endfor %}
+        </ul>
+    </article>
+</section>
+{% endblock %}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}SpamScope{% endblock %}</title>
+    <meta name="description" content="SpamScope operational console for spam email classification.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('web.static', filename='css/styles.css') }}">
+</head>
+<body
+    data-api-predict="{{ url_for('web.api_predict') }}"
+    data-api-batch="{{ url_for('web.api_batch_predict') }}"
+    data-api-model-info="{{ url_for('web.api_model_info') }}"
+>
+    <div class="app-frame">
+        <aside class="app-sidebar">
+            <a class="brand" href="{{ url_for('web.home') }}">
+                <span class="brand-mark">S</span>
+                <span>
+                    <strong>SpamScope</strong>
+                    <small>Mail Risk Console</small>
+                </span>
+            </a>
+
+            <nav class="nav-group" aria-label="Primary navigation">
+                <a class="nav-link {% if request.endpoint in ['web.home', 'web.predict_page', 'web.batch_page'] %}is-active{% endif %}" href="{{ url_for('web.home') }}">
+                    <span>Dashboard</span>
+                    <small>Single and batch scoring</small>
+                </a>
+                <a class="nav-link {% if request.endpoint == 'web.model_info_page' %}is-active{% endif %}" href="{{ url_for('web.model_info_page') }}">
+                    <span>Model Info</span>
+                    <small>Metrics and metadata</small>
+                </a>
+            </nav>
+
+            {% block sidebar_sections %}{% endblock %}
+
+            <section class="sidebar-card">
+                <span class="section-label">Runtime</span>
+                <dl class="sidebar-facts">
+                    <div>
+                        <dt>Status</dt>
+                        <dd><span class="status-pill status-{{ model_info.status|replace('_', '-') }}">{{ model_info.status }}</span></dd>
+                    </div>
+                    <div>
+                        <dt>Model</dt>
+                        <dd>{{ model_info.model_name }}</dd>
+                    </div>
+                    <div>
+                        <dt>Artifact</dt>
+                        <dd>{{ "Ready" if model_info.artifact_exists else "Missing" }}</dd>
+                    </div>
+                </dl>
+            </section>
+        </aside>
+
+        <main class="app-main">
+            <header class="topbar">
+                <div>
+                    <span class="eyebrow">{% block page_kicker %}Spam mail workflow{% endblock %}</span>
+                    <h1>{% block page_title %}SpamScope{% endblock %}</h1>
+                    <p>{% block page_description %}Operational workspace for spam scoring, batch review, and model inspection.{% endblock %}</p>
+                </div>
+                <div class="topbar-actions">
+                    <a class="button button-secondary" href="{{ url_for('web.api_health') }}">Health JSON</a>
+                    <a class="button button-primary" href="{{ url_for('web.model_info_page') }}">Model details</a>
+                </div>
+            </header>
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('web.static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

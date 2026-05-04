@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}SpamScope Error{% endblock %}
+{% block page_kicker %}Request error{% endblock %}
+{% block page_title %}{{ error_title }}{% endblock %}
+{% block page_description %}{{ message }}{% endblock %}
+
+{% block content %}
+<section class="dashboard-grid">
+    <article class="panel">
+        <div class="panel-head"><div><span class="section-label">Current server response</span><h2>Error summary</h2></div></div>
+        <dl class="detail-list">
+            <div><dt>Error code</dt><dd>{{ error_code }}</dd></div>
+            <div><dt>Model status</dt><dd>{{ model_info.status }}</dd></div>
+            <div><dt>Model</dt><dd>{{ model_info.model_name }}</dd></div>
+        </dl>
+        <div class="form-actions">
+            <a class="button button-primary" href="{{ url_for('web.home') }}">Back to dashboard</a>
+            <a class="button button-secondary" href="{{ url_for('web.model_info_page') }}">Open model info</a>
+        </div>
+    </article>
+    <article class="panel">
+        <div class="panel-head"><div><span class="section-label">Details</span><h2>Server context</h2></div></div>
+        {% if details %}<pre class="code-block">{{ details | tojson(indent=2) }}</pre>{% else %}<div class="empty-state">No extra details.</div>{% endif %}
+    </article>
+</section>
+{% endblock %}

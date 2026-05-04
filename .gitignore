@@ -25,6 +25,7 @@ MANIFEST
 
 # Virtual Environment
 venv/
+.venv/
 env/
 ENV/
 env.bak/
@@ -33,12 +34,18 @@ venv.bak/
 # Jupyter Notebook
 .ipynb_checkpoints
 *.ipynb
+!notebooks/train_on_google_colab.ipynb
 
 # PyCharm
 .idea/
 
 # VS Code
 .vscode/
+
+# Local agent/tool state
+.claude/
+AGENTS.md
+CLAUDE.md
 
 # Data files
 data/raw/*
@@ -47,12 +54,16 @@ data/processed/*
 !data/processed/.gitkeep
 *.csv
 *.txt
+!requirements.txt
 *.json
 *.pkl
 *.pickle
 
 # Models
+models/*/
+*.safetensors
 models/*.pkl
+models/*.joblib
 models/*.h5
 models/*.pt
 models/*.pth
@@ -88,3 +99,13 @@ htmlcov/
 # Temporary files
 tmp/
 temp/
+.tmp/
+
+# Local backups and personal learning notes
+backups/
+learning/
+
+# Local archives generated for Colab upload
+*.zip
+
+.gitnexus/

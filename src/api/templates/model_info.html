@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}SpamScope Model Info{% endblock %}
+{% block page_kicker %}Model registry{% endblock %}
+{% block page_title %}Metrics, metadata, and runtime state{% endblock %}
+{% block page_description %}Saved test-set performance, validation metrics, dataset summary, and operational metadata for the loaded artifact.{% endblock %}
+
+{% block sidebar_sections %}
+<section class="sidebar-card">
+    <span class="section-label">Inspect</span>
+    <a class="mini-link" href="#test-metrics">Test metrics</a>
+    <a class="mini-link" href="#saved-metadata">Metadata</a>
+    <a class="mini-link" href="#training-config">Training config</a>
+</section>
+{% endblock %}
+
+{% block content %}
+{% set dataset_summary = model_info.metadata.get("dataset_summary") or {} %}
+{% set training_config = model_info.metadata.get("config") or {} %}
+{% set source_counts = dataset_summary.get("source_counts") or {} %}
+
+<section class="metric-strip" id="test-metrics">
+    {% for key, value in model_info.metrics.items() %}
+    <article class="metric-card">
+        <span>{{ key|replace('_', ' ')|title }}</span>
+        <strong>{% if value is number %}{{ "%.4f"|format(value) }}{% else %}{{ value }}{% endif %}</strong>
+    </article>
+    {% else %}
+    <article class="metric-card"><span>Saved test-set performance</span><strong>N/A</strong></article>
+    {% endfor %}
+</section>
+
+<section class="dashboard-grid">
+    <article class="panel" id="saved-metadata">
+        <div class="panel-head"><div><span class="section-label">Saved metadata</span><h2>Artifact identity</h2></div></div>
+        <dl class="detail-list">
+            <div><dt>Status</dt><dd>{{ model_info.status }}</dd></div>
+            <div><dt>Model</dt><dd>{{ model_info.model_name }}</dd></div>
+            <div><dt>Trained at</dt><dd>{{ model_info.metadata.get("trained_at") or "N/A" }}</dd></div>
+            <div><dt>Best model</dt><dd>{{ model_info.metadata.get("best_model") or "N/A" }}</dd></div>
+            <div><dt>Artifact path</dt><dd>{{ model_info.artifact_path }}</dd></div>
+            <div><dt>Metadata path</dt><dd>{{ model_info.metadata_path }}</dd></div>
+        </dl>
+    </article>
+
+    <article class="panel">
+        <div class="panel-head"><div><span class="section-label">Validation</span><h2>Selection metrics</h2></div></div>
+        {% if model_info.validation_metrics %}
+        <dl class="detail-list two-col">
+            {% for key, value in model_info.validation_metrics.items() %}
+            <div><dt>{{ key|replace('_', ' ')|title }}</dt><dd>{% if value is number %}{{ "%.4f"|format(value) }}{% else %}{{ value }}{% endif %}</dd></div>
+            {% endfor %}
+        </dl>
+        {% else %}
+        <div class="empty-state">No validation metrics found for the selected model.</div>
+        {% endif %}
+    </article>
+</section>
+
+<section class="dashboard-grid">
+    <article class="panel">
+        <div class="panel-head"><div><span class="section-label">Dataset</span><h2>Training corpus summary</h2></div></div>
+        {% if dataset_summary %}
+        <div class="batch-summary">
+            <div><span>Total</span><strong>{{ dataset_summary.get("total_samples", "N/A") }}</strong></div>
+            <div><span>Ham</span><strong>{{ dataset_summary.get("ham_samples", "N/A") }}</strong></div>
+            <div><span>Spam</span><strong>{{ dataset_summary.get("spam_samples", "N/A") }}</strong></div>
+            <div><span>Test</span><strong>{{ dataset_summary.get("test_size", "N/A") }}</strong></div>
+        </div>
+        {% if source_counts %}
+        <ul class="api-list compact-list">
+            {% for source, count in source_counts.items() %}
+            <li><span>Source</span><code>{{ source }}</code><small>{{ count }}</small></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% else %}
+        <div class="empty-state">No dataset summary in metadata.</div>
+        {% endif %}
+    </article>
+
+    <article class="panel" id="training-config">
+        <div class="panel-head"><div><span class="section-label">Training config</span><h2>Run parameters</h2></div></div>
+        {% if training_config %}
+        <dl class="detail-list two-col">
+            <div><dt>Mode</dt><dd>{{ model_info.metadata.get("selected_training_mode") or "N/A" }}</dd></div>
+            <div><dt>Backbone</dt><dd>{{ training_config.get("contextual_model_name", "N/A") }}</dd></div>
+            <div><dt>Max length</dt><dd>{{ training_config.get("contextual_max_length", "N/A") }}</dd></div>
+            <div><dt>Epochs</dt><dd>{{ training_config.get("contextual_epochs", "N/A") }}</dd></div>
+            <div><dt>Learning rate</dt><dd>{{ training_config.get("contextual_learning_rate", "N/A") }}</dd></div>
+            <div><dt>Batch size</dt><dd>{{ training_config.get("contextual_batch_size", "N/A") }}</dd></div>
+        </dl>
+        {% else %}
+        <div class="empty-state">No training config in metadata.</div>
+        {% endif %}
+    </article>
+</section>
+
+<section class="panel panel-wide">
+    <div class="panel-head"><div><span class="section-label">API reference</span><h2>Quick endpoints for integration</h2></div></div>
+    <ul class="api-list api-grid">
+        {% for method, endpoint, description in api_reference %}
+        <li><span>{{ method }}</span><code>{{ endpoint }}</code><small>{{ description }}</small></li>
+        {% endfor %}
+    </ul>
+</section>
+
+{% if model_info.notes or model_info.load_errors %}
+<section class="dashboard-grid">
+    {% if model_info.notes %}<article class="panel"><div class="notice notice-warn">{% for note in model_info.notes %}<span>{{ note }}</span>{% endfor %}</div></article>{% endif %}
+    {% if model_info.load_errors %}<article class="panel"><div class="notice notice-danger">{% for error in model_info.load_errors %}<span>{{ error }}</span>{% endfor %}</div></article>{% endif %}
+</section>
+{% endif %}
+{% endblock %}
