@@ -85,6 +85,7 @@ Tài liệu này là khung mục lục học thuật cho báo cáo tiểu luận
   - Lợi thế của mô hình mã hóa trong bài toán phân loại.
 - 2.4. DeBERTa-v3-base
   - Mô hình nền sử dụng: `microsoft/deberta-v3-base`.
+  - Đây là mô hình ngôn ngữ tiền huấn luyện của Microsoft; đề tài sử dụng theo hướng transfer learning và fine-tuning, không huấn luyện DeBERTa từ đầu.
   - Bộ mã hóa gồm 12 tầng, khoảng 184 triệu tham số.
   - Phù hợp với bài toán phân loại chuỗi văn bản.
 - 2.5. Chỉ số đánh giá

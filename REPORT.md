@@ -115,6 +115,8 @@ Tiền xử lý vẫn giữ lại nhiều tín hiệu bề mặt vì phân loạ
 
 Mô hình cuối là `ContextualTransformerSpamPipeline`, bao bọc mô hình phân loại chuỗi của Hugging Face.
 
+`microsoft/deberta-v3-base` là mô hình ngôn ngữ tiền huấn luyện do Microsoft công bố. Đề tài không huấn luyện DeBERTa từ đầu, mà sử dụng mô hình này làm backbone, gắn đầu phân loại nhị phân và tinh chỉnh trên bộ dữ liệu email spam/ham của đề tài.
+
 | Cấu hình | Giá trị |
 | --- | --- |
 | Mô hình nền | `microsoft/deberta-v3-base` |
